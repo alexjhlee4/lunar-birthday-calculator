@@ -24,6 +24,20 @@
       nextYearDisabled: year === Constants.MAX_YEAR
     };
   }
+  
+  function findPrimaryResultForSolarYear(resultRows, targetSolarYear) {
+  if (!Array.isArray(resultRows) || !resultRows.length) {
+    return null;
+  }
+
+  return (
+    resultRows.find(
+      (row) => row.targetSolarYear === targetSolarYear
+    )
+    || resultRows[0]
+    || null
+  );
+  }
 
   function syncResultToCalendarState(calendarState, result) {
     return {
@@ -134,14 +148,15 @@
   }
 
   global.LunarBirthdayApp.Calendar = Object.freeze({
-    getShiftedMonth,
-    shiftMonthWithinRange,
-    shiftYearWithinRange,
-    getBoundaryState,
-    syncResultToCalendarState,
-    syncCalendarToResultIndex,
-    buildCalendarCells,
-    renderMonthlyCalendar,
-    getCalendarResultLabel
+  getShiftedMonth,
+  shiftMonthWithinRange,
+  shiftYearWithinRange,
+  getBoundaryState,
+  findPrimaryResultForSolarYear,
+  syncResultToCalendarState,
+  syncCalendarToResultIndex,
+  buildCalendarCells,
+  renderMonthlyCalendar,
+  getCalendarResultLabel
   });
 })(window);
