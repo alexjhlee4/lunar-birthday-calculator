@@ -1,0 +1,456 @@
+(function (global) {
+  'use strict';
+
+  const { Constants, DateUtils, AgeService, Calendar } = global.LunarBirthdayApp;
+  const S = Constants.RESULT_STATUS;
+
+  let refs = null;
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function cacheElements() {
+    refs = {
+      body: document.body,
+      todayText: document.querySelector('#today-text'),
+      beforeCalcNote: document.querySelector('#before-calc-note'),
+      supportNotice: document.querySelector('#support-notice'),
+      modeButtons: [...document.querySelectorAll('[data-input-mode]')],
+      form: document.querySelector('#birthday-form'),
+      yearInput: document.querySelector('#birth-year'),
+      monthInput: document.querySelector('#birth-month'),
+      dayInput: document.querySelector('#birth-day'),
+      leapWrap: document.querySelector('#leap-month-wrap'),
+      leapInput: document.querySelector('#is-leap-month'),
+      inputLabel: document.querySelector('#birth-input-label'),
+      formError: document.querySelector('#form-error'),
+      primarySection: document.querySelector('#primary-result-section'),
+      primaryHeading: document.querySelector('#primary-result-heading'),
+      primaryContent: document.querySelector('#primary-result-content'),
+      summarySection: document.querySelector('#summary-section'),
+      summaryContent: document.querySelector('#summary-content'),
+      rangeSection: document.querySelector('#range-section'),
+      resultBaseYear: document.querySelector('#result-base-year'),
+      resultPrev: document.querySelector('#result-prev-year'),
+      resultNext: document.querySelector('#result-next-year'),
+      rangeButtons: [...document.querySelectorAll('[data-result-range]')],
+      resultJumpInput: document.querySelector('#result-jump-year'),
+      resultJumpButton: document.querySelector('#result-jump-button'),
+      resultRecalculate: document.querySelector('#result-recalculate'),
+      resultSection: document.querySelector('#results-section'),
+      resultSummary: document.querySelector('#result-summary'),
+      resultNotices: document.querySelector('#result-notices'),
+      yearSearch: document.querySelector('#filter-year'),
+      statusFilter: document.querySelector('#filter-status'),
+      filterReset: document.querySelector('#filter-reset'),
+      filterCount: document.querySelector('#filter-count'),
+      noFilterResults: document.querySelector('#no-filter-results'),
+      tableBody: document.querySelector('#result-table-body'),
+      mobileCards: document.querySelector('#result-mobile-cards'),
+      calendarDisclosure: document.querySelector('#calendar-disclosure'),
+      calendarSection: document.querySelector('#calendar-section'),
+      calendarHeading: document.querySelector('#calendar-heading'),
+      calendarGrid: document.querySelector('#calendar-grid'),
+      calendarPrevYear: document.querySelector('#calendar-prev-year'),
+      calendarPrevMonth: document.querySelector('#calendar-prev-month'),
+      calendarNextMonth: document.querySelector('#calendar-next-month'),
+      calendarNextYear: document.querySelector('#calendar-next-year'),
+      calendarToday: document.querySelector('#calendar-today'),
+      calendarJumpYear: document.querySelector('#calendar-jump-year'),
+      calendarJumpMonth: document.querySelector('#calendar-jump-month'),
+      calendarJumpButton: document.querySelector('#calendar-jump-button'),
+      calendarApplyResultYear: document.querySelector('#calendar-apply-result-year'),
+      dateDetail: document.querySelector('#date-detail'),
+      liveRegion: document.querySelector('#live-region'),
+      modalOpen: document.querySelector('#criteria-open'),
+      modal: document.querySelector('#criteria-modal'),
+      modalPanel: document.querySelector('#criteria-modal-panel'),
+      modalClose: document.querySelector('#criteria-close')
+    };
+    return refs;
+  }
+
+  function getRefs() {
+    return refs || cacheElements();
+  }
+
+  function renderToday(actualToday, clampedToday, outOfRange) {
+    const r = getRefs();
+    r.todayText.textContent = `오늘은 ${actualToday.year}년 ${actualToday.month}월 ${actualToday.day}일입니다.`;
+    r.supportNotice.hidden = !outOfRange;
+    if (outOfRange) {
+      r.supportNotice.textContent = actualToday.year > Constants.MAX_YEAR
+        ? Constants.MESSAGES.OUT_OF_TODAY_RANGE
+        : '현재 날짜가 서비스 지원 범위를 벗어났습니다. 달력은 지원 가능한 첫 날짜인 1900년 1월을 표시합니다.';
+    }
+    r.calendarJumpYear.value = String(clampedToday.year);
+    r.calendarJumpMonth.value = String(clampedToday.month);
+  }
+
+  function setInputMode(mode) {
+    const r = getRefs();
+    r.modeButtons.forEach((button) => {
+      const active = button.dataset.inputMode === mode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    const lunar = mode === 'lunar';
+    r.leapWrap.hidden = !lunar;
+    if (!lunar) r.leapInput.checked = false;
+    r.inputLabel.textContent = lunar ? '음력 생년월일' : '양력 생년월일';
+    r.formError.hidden = true;
+  }
+
+  function showFormError(message, field) {
+    const r = getRefs();
+    r.formError.innerHTML = `<span aria-hidden="true">⚠️</span> ${escapeHtml(message)}`;
+    r.formError.hidden = false;
+    const target = field === 'month' ? r.monthInput
+      : field === 'day' ? r.dayInput
+        : field === 'leap' ? r.leapInput
+          : r.yearInput;
+    target.setAttribute('aria-invalid', 'true');
+    target.focus();
+    announce(message);
+  }
+
+  function clearFormError() {
+    const r = getRefs();
+    r.formError.hidden = true;
+    [r.yearInput, r.monthInput, r.dayInput, r.leapInput].forEach((input) => input.removeAttribute('aria-invalid'));
+  }
+
+  function formatLunar(lunar, includeYear) {
+    const prefix = includeYear ? `${lunar.year}년 ` : '';
+    return `${prefix}${lunar.isLeapMonth ? '윤' : '평'}${lunar.month}월 ${lunar.day}일`;
+  }
+
+  function renderSummary(normalized, basis, ganji) {
+    const r = getRefs();
+    const solarText = DateUtils.formatKoreanDate(normalized.solarBirthDate, false);
+    const lunarText = `${normalized.lunarBirthDate.year}년 ${normalized.lunarBirthDate.month}월 ${normalized.lunarBirthDate.day}일 · ${normalized.lunarBirthDate.isLeapMonth ? '윤달' : '평달'}`;
+    const inputTitle = normalized.inputMode === 'solar' ? '입력한 양력 생일' : '입력한 음력 생일';
+    const inputValue = normalized.inputMode === 'solar'
+      ? solarText
+      : `${normalized.originalInput.year}년 ${normalized.originalInput.month}월 ${normalized.originalInput.day}일 · ${normalized.originalInput.isLeapMonth ? '윤달' : '평달'}`;
+    const convertedTitle = normalized.inputMode === 'solar' ? '변환된 음력 생일' : '변환된 양력 생일';
+    const convertedValue = normalized.inputMode === 'solar' ? lunarText : solarText;
+
+    r.summaryContent.innerHTML = `
+      <dl class="summary-grid">
+        <div><dt>${inputTitle}</dt><dd>${escapeHtml(inputValue)}</dd></div>
+        <div><dt>${convertedTitle}</dt><dd>${escapeHtml(convertedValue)}</dd></div>
+        <div><dt>매년 계산할 음력 생일 기준</dt><dd>음력 ${basis.isLeapMonth ? '윤' : ''}${basis.month}월 ${basis.day}일${basis.isLeapMonth ? ' · 윤달' : ''}</dd></div>
+        <div><dt>태어난 해의 간지</dt><dd>${escapeHtml(ganji.display)}</dd></div>
+        <div><dt>실제 양력 출생일</dt><dd>${escapeHtml(solarText)}</dd></div>
+      </dl>
+      <p class="confirmation-note"><span aria-hidden="true">✓</span> 이 음력 월·일을 기준으로 연도별 생일을 계산합니다.</p>
+    `;
+    r.beforeCalcNote.hidden = true;
+    r.summarySection.hidden = false;
+    r.summarySection.open = false;
+    r.rangeSection.hidden = false;
+    r.resultSection.hidden = false;
+  }
+
+  function renderPrimaryResult(resultMeta) {
+    const r = getRefs();
+    const rows = resultMeta?.rows?.filter((row) => row.targetSolarYear === resultMeta.baseYear) || [];
+    r.primaryHeading.textContent = `${resultMeta.baseYear}년 음력 생일`;
+
+    if (!rows.length) {
+      r.primaryContent.innerHTML = '<p class="notice-box">선택한 연도에 표시할 생일 결과를 찾지 못했습니다.</p>';
+      r.primarySection.hidden = false;
+      return;
+    }
+
+    const duplicateNotice = rows.length > 1
+      ? '<p class="notice-box">이 양력 연도에는 같은 음력 생일이 두 번 포함되어 있어 두 날짜를 모두 표시합니다.</p>'
+      : '';
+
+    r.primaryContent.innerHTML = `
+      ${duplicateNotice}
+      <div class="primary-result-list">
+        ${rows.map((row) => {
+          const lunarLabel = `음력 ${row.appliedLunarDate.month}월 ${row.appliedLunarDate.day}일 · ${row.appliedLunarDate.isLeapMonth ? '윤달' : '평달'}`;
+          const badges = getStatusBadgeHtml(row);
+          const messages = row.messages.length
+            ? `<ul class="adjustment-messages primary-adjustment">${row.messages.map((message) => `<li>${escapeHtml(message)}</li>`).join('')}</ul>`
+            : '';
+          return `
+            <article class="primary-result-item">
+              <p class="primary-year">${row.targetSolarYear}년</p>
+              <p class="primary-date">
+                <strong>${row.solarDate.month}월 ${row.solarDate.day}일</strong>
+                <span>${escapeHtml(row.weekday)}</span>
+              </p>
+              <p class="primary-meta">${escapeHtml(lunarLabel)} · <span class="primary-age">${escapeHtml(AgeService.formatAge(row.age))}</span></p>
+              ${badges ? `<div class="badge-list" style="justify-content:center; margin-top:.65rem">${badges}</div>` : ''}
+              ${messages}
+              <div class="primary-result-actions">
+                <button type="button" class="button button-secondary" data-result-key="${row.dateKey}">달력에서 보기</button>
+              </div>
+            </article>`;
+        }).join('')}
+      </div>`;
+    r.primarySection.hidden = false;
+  }
+
+  function clearCalculationResult() {
+    const r = getRefs();
+    r.beforeCalcNote.hidden = false;
+    r.primarySection.hidden = true;
+    r.primaryContent.replaceChildren();
+    r.summarySection.hidden = true;
+    r.summarySection.open = false;
+    r.rangeSection.hidden = true;
+    r.resultSection.hidden = true;
+    if (r.calendarDisclosure) r.calendarDisclosure.open = false;
+    r.tableBody.replaceChildren();
+    r.mobileCards.replaceChildren();
+    r.dateDetail.innerHTML = '<p>달력에서 날짜를 선택하면 양력·음력 정보를 확인할 수 있습니다.</p>';
+  }
+
+  function renderRangeControls(baseYear, range) {
+    const r = getRefs();
+    r.resultBaseYear.textContent = `${baseYear}년`;
+    r.resultPrev.disabled = baseYear <= Constants.MIN_YEAR;
+    r.resultNext.disabled = baseYear >= Constants.MAX_YEAR;
+    r.resultJumpInput.value = String(baseYear);
+    r.rangeButtons.forEach((button) => {
+      const active = Number(button.dataset.resultRange) === range;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+  }
+
+  function getStatusBadgeHtml(row) {
+    const statuses = (row.statuses || [S.NORMAL]).filter((status) => status !== S.NORMAL);
+    return statuses.map((status) => {
+      const label = Constants.STATUS_LABELS[status] || status;
+      return `<span class="status-badge status-${status.toLowerCase()}">${escapeHtml(label)}</span>`;
+    }).join('');
+  }
+
+  function renderResults(resultMeta, filteredRows, activeDateKey) {
+    const r = getRefs();
+    r.resultSummary.textContent = `${resultMeta.baseYear}년부터 ${resultMeta.endYear}년까지, 총 ${resultMeta.rows.length}개의 생일 날짜를 계산했습니다.`;
+    const notices = [];
+    if (resultMeta.truncated) notices.push(Constants.MESSAGES.RANGE_TRUNCATED);
+    resultMeta.duplicateYears.forEach((year) => notices.push(`${year}년에는 같은 음력 생일이 두 번 포함되어 있습니다. 두 날짜를 모두 표시합니다.`));
+    r.resultNotices.innerHTML = notices.map((notice) => `<p class="notice-box">${escapeHtml(notice)}</p>`).join('');
+    r.filterCount.textContent = `전체 ${resultMeta.rows.length}개 중 ${filteredRows.length}개 표시`;
+    r.noFilterResults.hidden = filteredRows.length !== 0;
+    r.noFilterResults.textContent = Constants.MESSAGES.NO_FILTER_RESULTS;
+    r.tableBody.replaceChildren();
+    r.mobileCards.replaceChildren();
+
+    filteredRows.forEach((row) => {
+      const lunarLabel = `음력 ${row.appliedLunarDate.month}월 ${row.appliedLunarDate.day}일 · ${row.appliedLunarDate.isLeapMonth ? '윤달' : '평달'}`;
+      const badgeHtml = getStatusBadgeHtml(row);
+      const messageHtml = row.messages.length
+        ? `<ul class="adjustment-messages">${row.messages.map((m) => `<li>${escapeHtml(m)}</li>`).join('')}</ul>`
+        : '';
+      const activeClass = row.dateKey === activeDateKey ? ' is-active-result' : '';
+
+      const tr = document.createElement('tr');
+      tr.id = `result-row-${row.dateKey}`;
+      tr.className = activeClass.trim();
+      tr.innerHTML = `
+        <td>${row.targetSolarYear}년</td>
+        <td><strong>${escapeHtml(DateUtils.formatKoreanDate(row.solarDate, false))}</strong></td>
+        <td>${escapeHtml(row.weekday)}</td>
+        <td>${escapeHtml(lunarLabel)}</td>
+        <td>${escapeHtml(AgeService.formatAge(row.age))}</td>
+        <td>${badgeHtml ? `<div class="badge-list">${badgeHtml}</div>${messageHtml}` : '<span class="status-none">—</span>'}</td>
+        <td><button type="button" class="button button-small" data-result-key="${row.dateKey}">달력에서 보기</button></td>
+      `;
+      r.tableBody.appendChild(tr);
+
+      const card = document.createElement('article');
+      card.id = `result-card-${row.dateKey}`;
+      card.className = `result-card${activeClass}`;
+      card.innerHTML = `
+        <p class="result-year">${row.targetSolarYear}년</p>
+        <h3>${escapeHtml(DateUtils.formatKoreanDate(row.solarDate, true))}</h3>
+        <p>${escapeHtml(lunarLabel)}</p>
+        <p><strong>${escapeHtml(AgeService.formatAge(row.age))}</strong></p>
+        ${badgeHtml ? `<div class="badge-list">${badgeHtml}</div>` : ''}
+        ${messageHtml}
+        <button type="button" class="button button-secondary" data-result-key="${row.dateKey}">달력에서 보기</button>
+      `;
+      r.mobileCards.appendChild(card);
+    });
+  }
+
+  function renderCalendar(calendarState, rows, solarBirthDate, onDateSelect) {
+    const r = getRefs();
+    const boundary = Calendar.getBoundaryState(calendarState.year, calendarState.month);
+    r.calendarPrevMonth.disabled = boundary.previousMonthDisabled;
+    r.calendarPrevYear.disabled = boundary.previousYearDisabled;
+    r.calendarNextMonth.disabled = boundary.nextMonthDisabled;
+    r.calendarNextYear.disabled = boundary.nextYearDisabled;
+    r.calendarJumpYear.value = String(calendarState.year);
+    r.calendarJumpMonth.value = String(calendarState.month);
+    Calendar.renderMonthlyCalendar({
+      gridElement: r.calendarGrid,
+      headingElement: r.calendarHeading,
+      year: calendarState.year,
+      month: calendarState.month,
+      resultRows: rows,
+      selectedDate: calendarState.selectedDate,
+      solarBirthDate,
+      onDateSelect
+    });
+  }
+
+  function renderDateDetail(cell) {
+    const r = getRefs();
+    const weekday = DateUtils.getWeekdayName(cell.date);
+    const lunarText = cell.lunar
+      ? `음력 ${cell.lunar.year}년 ${cell.lunar.month}월 ${cell.lunar.day}일 · ${cell.lunar.isLeapMonth ? '윤달' : '평달'}`
+      : '음력 정보를 확인할 수 없습니다.';
+    const result = cell.result;
+    r.dateDetail.innerHTML = `
+      <h3>${escapeHtml(DateUtils.formatKoreanDate(cell.date, false))} ${escapeHtml(weekday)}</h3>
+      <p>${escapeHtml(lunarText)}</p>
+      ${result ? `
+        <p><strong><span aria-hidden="true">🎂</span> 계산된 음력 생일입니다.</strong></p>
+        <p>${escapeHtml(AgeService.formatAge(result.age))}</p>
+        ${getStatusBadgeHtml(result) ? `<div class="badge-list">${getStatusBadgeHtml(result)}</div>` : ''}
+        ${result.messages.length ? `<ul class="adjustment-messages">${result.messages.map((m) => `<li>${escapeHtml(m)}</li>`).join('')}</ul>` : ''}
+        <button type="button" class="button button-secondary" data-scroll-result="${result.dateKey}">결과에서 보기</button>
+      ` : '<p>현재 계산 결과에 포함된 생일 날짜가 아닙니다.</p>'}
+    `;
+  }
+
+  function setActiveResult(dateKey) {
+    document.querySelectorAll('.is-active-result').forEach((element) => element.classList.remove('is-active-result'));
+    if (!dateKey) return;
+    document.querySelector(`#result-row-${CSS.escape(dateKey)}`)?.classList.add('is-active-result');
+    document.querySelector(`#result-card-${CSS.escape(dateKey)}`)?.classList.add('is-active-result');
+  }
+
+  function scrollToResult(dateKey) {
+    const target = document.querySelector(`#result-row-${CSS.escape(dateKey)}`)
+      || document.querySelector(`#result-card-${CSS.escape(dateKey)}`);
+    if (target) {
+      setActiveResult(dateKey);
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const button = target.querySelector('button');
+      if (button) button.focus({ preventScroll: true });
+    }
+  }
+
+  function populateSelectors() {
+    const r = getRefs();
+    r.calendarJumpYear.replaceChildren();
+    for (let year = Constants.MIN_YEAR; year <= Constants.MAX_YEAR; year += 1) {
+      const option = document.createElement('option');
+      option.value = String(year);
+      option.textContent = `${year}년`;
+      r.calendarJumpYear.appendChild(option);
+    }
+    r.calendarJumpMonth.replaceChildren();
+    for (let month = 1; month <= 12; month += 1) {
+      const option = document.createElement('option');
+      option.value = String(month);
+      option.textContent = `${month}월`;
+      r.calendarJumpMonth.appendChild(option);
+    }
+    r.statusFilter.replaceChildren();
+    Constants.FILTER_OPTIONS.forEach((item) => {
+      const option = document.createElement('option');
+      option.value = item.value;
+      option.textContent = item.label;
+      r.statusFilter.appendChild(option);
+    });
+  }
+
+  function announce(message) {
+    const r = getRefs();
+    r.liveRegion.textContent = '';
+    window.setTimeout(() => { r.liveRegion.textContent = message; }, 20);
+  }
+
+  function setupModal() {
+    const r = getRefs();
+    let lastFocused = null;
+
+    function getFocusable() {
+      return [...r.modalPanel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+        .filter((element) => !element.disabled && !element.hidden);
+    }
+
+    function open() {
+      lastFocused = document.activeElement;
+      r.modal.hidden = false;
+      r.modal.setAttribute('aria-hidden', 'false');
+      r.body.classList.add('modal-open');
+      r.modalClose.focus();
+    }
+
+    function close() {
+      r.modal.hidden = true;
+      r.modal.setAttribute('aria-hidden', 'true');
+      r.body.classList.remove('modal-open');
+      if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
+    }
+
+    r.modalOpen.addEventListener('click', open);
+    r.modalClose.addEventListener('click', close);
+    r.modal.addEventListener('mousedown', (event) => {
+      if (event.target === r.modal) close();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (r.modal.hidden) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        close();
+        return;
+      }
+      if (event.key === 'Tab') {
+        const focusable = getFocusable();
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    });
+    return { open, close };
+  }
+
+  global.LunarBirthdayApp.UI = Object.freeze({
+    cacheElements,
+    getRefs,
+    renderToday,
+    setInputMode,
+    showFormError,
+    clearFormError,
+    renderSummary,
+    renderPrimaryResult,
+    clearCalculationResult,
+    renderRangeControls,
+    renderResults,
+    renderCalendar,
+    renderDateDetail,
+    setActiveResult,
+    scrollToResult,
+    populateSelectors,
+    announce,
+    setupModal,
+    formatLunar
+  });
+})(window);
