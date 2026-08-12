@@ -103,6 +103,57 @@
     equal(Calendar.syncCalendarToResultIndex('2026-06-30', [row]), 0, '결과 인덱스');
   });
 
+  test(
+  '10-1. 달력을 처음 열 때 기준 연도의 생일 결과 선택',
+  () => {
+
+    const rows = [
+      {
+        targetSolarYear: 2026,
+        dateKey: '2026-02-17',
+        solarDate: {
+          year: 2026,
+          month: 2,
+          day: 17
+        }
+      },
+      {
+        targetSolarYear: 2027,
+        dateKey: '2027-02-07',
+        solarDate: {
+          year: 2027,
+          month: 2,
+          day: 7
+        }
+      }
+    ];
+
+    const primary =
+      Calendar.findPrimaryResultForSolarYear(
+        rows,
+        2026
+      );
+
+    equal(
+      primary.dateKey,
+      '2026-02-17',
+      '기준 연도의 첫 생일 결과 선택'
+    );
+
+    const fallback =
+      Calendar.findPrimaryResultForSolarYear(
+        rows,
+        2030
+      );
+
+    equal(
+      fallback.dateKey,
+      '2026-02-17',
+      '기준 연도 결과가 없으면 첫 결과 사용'
+    );
+  }
+);
+
   test('11. 연도 검색과 상태 필터', () => {
     const rows = [
       { targetSolarYear: 2026, statuses: [S.NORMAL], compositeStatus: S.NORMAL },

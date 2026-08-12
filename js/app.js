@@ -139,6 +139,46 @@
       UI.announce(`${appState.calendar.year}년부터 결과를 표시합니다.`);
       r.resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+    const calendarSummary =
+  r.calendarDisclosure?.querySelector('summary');
+
+if (calendarSummary) {
+  calendarSummary.addEventListener('click', (event) => {
+
+    // 이미 열린 달력을 닫으려는 경우에는
+    // 기존 <details> 동작을 그대로 사용한다.
+    if (r.calendarDisclosure.open) {
+      return;
+    }
+
+    const primaryResult =
+      getPrimaryResultForCalendar();
+
+    // 아직 생일 계산 전이라면
+    // 기존 달력 동작을 그대로 사용한다.
+    if (!primaryResult) {
+      return;
+    }
+
+    // <details>의 기본 열기 동작 대신
+    // 계산된 생일 날짜로 달력을 연다.
+    event.preventDefault();
+
+    openCalendarAtResult(
+      primaryResult,
+      {
+        scroll: false,
+        focusDate: false,
+
+        announcement:
+          `${DateUtils.formatKoreanDate(
+            primaryResult.solarDate,
+            true
+          )} 생일 날짜가 선택된 달력을 열었습니다.`
+      }
+    );
+  });
+}
 
     [r.primaryContent, r.tableBody, r.mobileCards].forEach((container) => {
       container.addEventListener('click', (event) => {
@@ -313,20 +353,90 @@
     if (cell) handleCalendarDateSelect(cell);
   }
 
-  function syncResultToCalendar(dateKey) {
-    const result = appState.resultRows.find((row) => row.dateKey === dateKey);
-    if (!result) return;
-    appState.calendar = Calendar.syncResultToCalendarState(appState.calendar, result);
-    appState.activeResultDateKey = dateKey;
-    const refs = UI.getRefs();
-    if (refs.calendarDisclosure) refs.calendarDisclosure.open = true;
-    renderCalendar();
-    selectDateByParts(result.solarDate);
-    refs.calendarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+function getPrimaryResultForCalendar() {
+  return Calendar.findPrimaryResultForSolarYear(
+    appState.resultRows,
+    appState.resultBaseYear
+  );
+}
+
+
+function openCalendarAtResult(
+  result,
+  options = {}
+) {
+  if (!result) return;
+
+  const {
+    scroll = true,
+    focusDate = true,
+    announcement = null
+  } = options;
+
+  appState.calendar =
+    Calendar.syncResultToCalendarState(
+      appState.calendar,
+      result
+    );
+
+  appState.activeResultDateKey =
+    result.dateKey;
+
+  const refs = UI.getRefs();
+
+  if (refs.calendarDisclosure) {
+    refs.calendarDisclosure.open = true;
+  }
+
+  /*
+   * selectDateByParts가
+   *
+   * - 달력 렌더링
+   * - 날짜 선택
+   * - 날짜 상세 정보
+   * - 결과 행 강조
+   *
+   * 를 함께 처리한다.
+   */
+  selectDateByParts(
+    result.solarDate
+  );
+
+  if (announcement) {
+    UI.announce(announcement);
+  }
+
+  if (scroll) {
+    refs.calendarSection.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  }
+
+  if (focusDate) {
     window.setTimeout(() => {
-      document.querySelector(`.calendar-day[data-date-key="${dateKey}"]`)?.focus({ preventScroll: true });
+      document
+        .querySelector(
+          `.calendar-day[data-date-key="${result.dateKey}"]`
+        )
+        ?.focus({
+          preventScroll: true
+        });
     }, 350);
   }
+}
+
+
+function syncResultToCalendar(dateKey) {
+  const result =
+    appState.resultRows.find(
+      (row) => row.dateKey === dateKey
+    );
+
+  if (!result) return;
+
+  openCalendarAtResult(result);
+}
 
   document.addEventListener('DOMContentLoaded', init);
 })(window);
