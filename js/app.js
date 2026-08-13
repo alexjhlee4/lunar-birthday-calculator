@@ -140,7 +140,7 @@
       r.resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     const calendarSummary =
-  r.calendarDisclosure?.querySelector('summary');
+    r.calendarDisclosure?.querySelector('summary');
 
 if (calendarSummary) {
   calendarSummary.addEventListener('click', (event) => {
@@ -191,6 +191,23 @@ if (calendarSummary) {
       const button = event.target.closest('[data-scroll-result]');
       if (button) UI.scrollToResult(button.dataset.scrollResult);
     });
+
+        /* [EASTER EGG] 특별 날짜 팝업에 필요한 DOM 요소입니다.
+   기존 UI 상태나 음력 계산 상태에는 포함하지 않고 독립적으로 관리합니다. */
+    const easterEggDialog =
+    document.getElementById(
+    'birthday-easter-egg'
+    );
+    const easterEggClose =
+    document.getElementById(
+    'easter-egg-close'
+    );
+    /* [EASTER EGG] 사용자가 닫기 버튼을 누르면
+   특별 메시지만 닫고 기존 계산 결과는 그대로 유지합니다. */
+    easterEggClose?.addEventListener(
+    'click', () => {easterEggDialog?.close();}
+    );
+
   }
 
   function updateInputDayLimit() {
@@ -249,6 +266,31 @@ if (calendarSummary) {
     UI.renderSummary(normalized, basis, ganji);
     recalculateResults('생일 계산이 완료되었습니다.');
     UI.getRefs().primarySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    /* [EASTER EGG] 정상적인 생일 계산과 결과 렌더링이
+     모두 완료된 뒤에만 특별 날짜를 확인합니다.
+     따라서 이스터에그는 기존 계산 과정이나 오류 처리에 영향을 주지 않습니다. */
+  if (
+    isEasterEggBirthday(
+      appState.inputMode,
+      inputValues
+    )
+  ) {
+    const easterEggDialog =
+      document.getElementById(
+        'birthday-easter-egg'
+      );
+
+
+    /* [EASTER EGG] dialog가 실제로 존재하고
+       이미 열려 있지 않을 때만 특별 메시지를 표시합니다. */
+    if (
+      easterEggDialog
+      && !easterEggDialog.open
+    ) {
+      easterEggDialog.showModal();
+    }
+  }
   }
 
   function resetCalculationData() {
@@ -424,6 +466,21 @@ function openCalendarAtResult(
         });
     }, 350);
   }
+}
+
+/* [EASTER EGG] 사용자가 '양력으로 입력' 모드에서
+   정확히 1998년 9월 14일을 입력했는지만 확인합니다.
+   음력 모드에서는 같은 숫자를 입력해도 다른 날짜이므로 발동하지 않습니다. */
+function isEasterEggBirthday(
+  inputMode,
+  inputValues
+) {
+  return (
+    inputMode === 'solar'
+    && Number(inputValues.year) === 1998
+    && Number(inputValues.month) === 9
+    && Number(inputValues.day) === 14
+  );
 }
 
 

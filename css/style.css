@@ -1013,6 +1013,82 @@ fieldset legend { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
 .modal-content section { border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
 .modal-content section:last-child { border-bottom: 0; }
 .modal-content h3 { color: var(--primary-dark); margin-bottom: 0.3rem; }
+/* =========================================================
+   [EASTER EGG] 1998년 9월 14일 특별 메시지
+   계산 기능과 분리된 가벼운 dialog UI입니다.
+   ========================================================= */
+
+
+/* [EASTER EGG] 기본 dialog 테두리를 제거하고
+   모바일과 데스크톱 모두에서 읽기 쉬운 크기로 제한합니다. */
+.easter-egg-dialog {
+  width: min(
+    calc(100% - 32px),
+    420px
+  );
+
+  margin: auto;
+  padding: 0;
+
+  border: 0;
+  border-radius: 20px;
+
+  background: #fff;
+
+  box-shadow:
+    0 24px 70px
+    rgba(56, 31, 24, 0.28);
+}
+
+/* [EASTER EGG] dialog 뒤쪽을 어둡게 처리해
+   메시지에 자연스럽게 시선을 집중시킵니다. */
+.easter-egg-dialog::backdrop {background: rgba(33, 20, 16, 0.55);}
+
+/* [EASTER EGG] 내용은 짧은 메시지가 중심이므로
+   가운데 정렬된 단순한 구조를 사용합니다. */
+.easter-egg-content {
+  display: grid;
+  gap: 1.25rem;
+
+  padding:
+    2rem
+    1.25rem
+    1.25rem;
+
+  text-align: center;
+}
+
+
+/* [EASTER EGG] 메시지를 팝업의 가장 중요한 요소로 표시합니다. */
+.easter-egg-message {
+  margin: 0;
+
+  color: var(--primary-dark);
+
+  font-size: clamp(
+    1.5rem,
+    7vw,
+    2rem
+  );
+
+  font-weight: 850;
+
+  line-height: 1.4;
+}
+
+/* [EASTER EGG] 하트는 텍스트와 함께 보이되
+   메시지를 압도하지 않는 크기로 사용합니다. */
+.easter-egg-heart {
+  display: inline-block;
+
+  margin-left: 0.2rem;
+
+  color: #c33f4a;
+}
+
+/* [EASTER EGG] 모바일에서도 닫기 버튼을
+   쉽게 누를 수 있도록 충분한 너비와 터치 영역을 제공합니다. */
+.easter-egg-close {width: 100%; min-height: 44px;}
 
 /* [UX 2단계] 431px 이상:
    작은 모바일보다 공간이 생기면 조회 기간 버튼을 한 줄에 표시합니다. */

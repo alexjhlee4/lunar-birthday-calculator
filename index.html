@@ -682,6 +682,44 @@
       <p>입력한 생년월일은 서버로 전송하거나 저장하지 않습니다. 모든 계산은 현재 브라우저 안에서만 처리됩니다.</p>
     </section>
   </main>
+  
+  <!-- [EASTER EGG] 양력 1998년 9월 14일을 입력한 경우에만 표시되는
+     작은 개인 메시지 팝업입니다.
+     음력 계산이나 결과 생성 기능과는 완전히 독립적으로 동작합니다. -->
+<dialog
+  id="birthday-easter-egg"
+  class="easter-egg-dialog"
+  aria-labelledby="easter-egg-title"
+>
+  <div class="easter-egg-content">
+
+    <!-- [EASTER EGG] 메시지를 짧고 단순하게 유지해
+         계산 결과보다 과도하게 복잡한 UI가 되지 않도록 합니다. -->
+    <p
+      id="easter-egg-title"
+      class="easter-egg-message"
+    >
+      하영아 사랑해
+      <span
+        class="easter-egg-heart"
+        aria-hidden="true"
+      >
+        ♥
+      </span>
+    </p>
+
+    <!-- [EASTER EGG] 키보드와 모바일 모두에서
+         명확하게 닫을 수 있는 실제 button 요소를 사용합니다. -->
+    <button
+      id="easter-egg-close"
+      type="button"
+      class="button button-primary easter-egg-close"
+    >
+      닫기
+    </button>
+
+  </div>
+</dialog>
 
   <footer class="site-footer">
     <div class="container">
