@@ -2,27 +2,193 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- [UX 2단계] 노치가 있는 모바일 기기에서도 안전 영역을 사용할 수 있도록 viewport-fit을 추가합니다. -->
+  <meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
   <meta name="description" content="한국 음력 기준으로 양력·음력 생일을 변환하고 연도별 실제 생일 날짜와 만 나이를 확인하는 정적 웹서비스">
   <title>음력 생일 계산기</title>
 
-  <!-- 외부 CSS가 로드되지 못한 상황에서도 화면이 완전히 무너지지 않도록 하는 최소 안전 스타일 -->
+  <!-- [UX 2단계] main CSS가 실패해도 입력과 핵심 레이아웃이 무너지지 않는 최소 모바일 우선 안전 스타일입니다. -->
   <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    [hidden] { display: none !important; }
-    body { margin: 0; min-width: 320px; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.6; color: #2d2926; background: #fffaf3; }
-    .container { width: min(1160px, calc(100% - 24px)); margin-inline: auto; }
-    main { padding-block: 1rem 2rem; }
-    button, input, select { min-height: 44px; font: inherit; }
-    input, select { max-width: 100%; }
-    img, svg { max-width: 100%; }
-    @media (max-width: 430px) {
-      .container { width: min(100% - 16px, 1160px); }
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-width: 0;
+
+    font-family:
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+
+    line-height: 1.6;
+    color: #2d2926;
+    background: #fffaf3;
+
+    overflow-wrap: break-word;
+  }
+
+  .container {
+    width: min(1160px, calc(100% - 24px));
+    margin-inline: auto;
+  }
+
+  .site-header {
+    padding: 1.5rem 0;
+    background: #6f2f24;
+    color: #fff;
+  }
+
+  .header-inner,
+  .page-layout {
+    display: grid;
+    gap: 1rem;
+  }
+
+  main {
+    padding-block: 1rem 2rem;
+  }
+
+  .card,
+  .card-muted {
+    padding: 1rem;
+
+    border: 1px solid #d9cec3;
+    border-radius: 14px;
+
+    background: #fff;
+  }
+
+  button,
+  input,
+  select,
+  summary {
+    max-width: 100%;
+    min-width: 0;
+    min-height: 44px;
+
+    font: inherit;
+  }
+
+  input,
+  select {
+    width: 100%;
+  }
+
+  .segmented-control {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem;
+  }
+
+  .date-input-grid {
+    display: grid;
+
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr);
+
+    gap: 0.75rem;
+  }
+
+  .date-input-grid .field-year {
+    grid-column: 1 / -1;
+  }
+
+  .field-group,
+  .input-with-unit {
+    min-width: 0;
+  }
+
+  .input-with-unit {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .input-with-unit input {
+    min-width: 0;
+  }
+
+  img,
+  svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* [UX 2단계] CSS 경로 오류가 발생하면 깨진 화면 대신 실행 방법을 안내합니다. */
+  .css-load-warning {
+    display: none;
+
+    margin-top: 1rem;
+    padding: 0.85rem 1rem;
+
+    border: 1px solid #e1bd63;
+    border-radius: 12px;
+
+    background: #fff2cc;
+    color: #7a4b00;
+
+    font-weight: 700;
+  }
+
+  html.css-load-failed .css-load-warning {
+    display: block;
+  }
+
+  /* [UX 2단계] CSS가 실패한 경우에도 태블릿 이상에서는 최소한의 데스크톱 배치를 복원합니다. */
+  @media (min-width: 701px) {
+    .container {
+      width: min(1160px, calc(100% - 32px));
     }
+
+    .header-inner {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+    }
+
+    .date-input-grid {
+      grid-template-columns: 2fr 1fr 1fr;
+    }
+
+    .date-input-grid .field-year {
+      grid-column: auto;
+    }
+
+    .card,
+    .card-muted {
+      padding: clamp(1.1rem, 3vw, 2rem);
+    }
+  }
   </style>
 
-  <link rel="stylesheet" href="css/reset.css">
-  <link rel="stylesheet" href="css/style.css">
+  <!-- [UX 2단계] GitHub Pages의 하위 경로에서도 동작하도록 루트(/)가 아닌 현재 문서 기준 상대경로를 사용합니다. -->
+  <link
+  rel="stylesheet"
+  href="./css/reset.css"
+  onerror="document.documentElement.classList.add('css-load-failed')"
+  >
+
+  <link
+  id="main-stylesheet"
+  rel="stylesheet"
+  href="./css/style.css"
+  onerror="document.documentElement.classList.add('css-load-failed')"
+  >
 </head>
 <body data-page="app">
   <a class="skip-link" href="#main-content">본문으로 바로가기</a>
@@ -42,6 +208,19 @@
   </header>
 
   <main id="main-content" class="container page-layout">
+      <!-- [UX 2단계] style.css 또는 reset.css를 불러오지 못했을 때만 표시되는 정적 파일 경로 안내입니다. -->
+    <div
+    class="css-load-warning"
+    role="alert"
+    >
+    화면 스타일을 불러오지 못했습니다.
+    <strong>
+      index.html만 단독으로 열지 말고
+      css, js, vendor 폴더를 포함한 프로젝트 전체를
+      Live Server 또는 정적 배포 주소로 실행해 주세요.
+    </strong>
+    </div>
+
     <div id="support-notice" class="notice-box notice-warning" role="status" hidden></div>
 
     <section class="card input-card" aria-labelledby="input-heading">
@@ -65,7 +244,7 @@
         <fieldset>
           <legend id="birth-input-label">양력 생년월일</legend>
           <div class="date-input-grid">
-            <div class="field-group">
+            <div class="field-group field-year">
               <label for="birth-year">연도</label>
               <div class="input-with-unit">
                 <input id="birth-year" name="year" type="number" inputmode="numeric" min="1900" max="2050" placeholder="1980" autocomplete="bday-year" aria-describedby="birth-range-help form-error">
