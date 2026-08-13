@@ -22,6 +22,10 @@
   /* [UX 2단계] 모바일부터 데스크톱까지 공통으로 사용하는 반응형 여백 변수입니다. */
   --page-gutter: 12px;
   --card-padding: 1rem;
+  --shadow-soft: 0 4px 16px rgba(63, 45, 37, 0.07);
+  --shadow-raised: 0 10px 30px rgba(63, 45, 37, 0.11);
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
 }
 
 html { scroll-behavior: smooth; }
@@ -104,13 +108,13 @@ h1 { font-size: clamp(1.8rem, 9vw, 3rem); line-height: 1.15; }
 .card, .card-muted {
   border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: var(--card-padding);
 }
-.card { box-shadow: var(--shadow); }
+.card { box-shadow: var(--shadow-soft); }
 .card-muted { background: var(--surface-soft); }
 .section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.15rem; }
 .section-heading-simple { margin-bottom: 1rem; }
-.section-heading h2 { font-size: clamp(1.35rem, 3vw, 1.75rem); line-height: 1.3; }
+.section-heading h2 { font-size: clamp(1.35rem, 3vw, 1.75rem); margin: 0 0 0.25rem; line-height: 1.25; }
 .section-description, .help-text { color: var(--muted); }
-.section-description { margin-top: 0.25rem; }
+.section-description { margin: 0; color: var(--muted); line-height: 1.6; }
 .help-text { font-size: 0.92rem; margin-top: 0.4rem; }
 
 .button, .chip-button, .segment-button, .icon-button {
@@ -126,6 +130,25 @@ h1 { font-size: clamp(1.8rem, 9vw, 3rem); line-height: 1.15; }
 .button-small { min-height: 40px; padding: 0.45rem 0.7rem; font-size: 0.9rem; }
 .button-compact { background: #fff; border-color: var(--border); color: var(--text); padding: 0.55rem 0.75rem; }
 .button:disabled, .chip-button:disabled { opacity: 0.45; background: #eee; color: #777; }
+/* [UX 7단계] 버튼 상태 변화가 갑작스럽지 않도록
+   짧은 transition을 공통으로 적용합니다. */
+.button {
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+/* [UX 7단계] 마우스 환경에서만 버튼이 아주 조금 떠오르는
+   가벼운 피드백을 제공합니다. */
+@media (hover: hover) {
+.button:hover {transform: translateY(-1px);}}
+
+/* [UX 7단계] 버튼을 누르는 순간에는
+   위치를 원래 상태로 돌려 실제 클릭감을 제공합니다. */
+.button:active {transform: translateY(0);}
 
 /* 입력: 설명을 줄이고 행동을 우선시한다. */
 .input-card { border-top: 4px solid var(--primary); }
@@ -355,8 +378,9 @@ fieldset legend { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
 #result-notices { display: grid; gap: 0.6rem; margin-bottom: 1rem; }
 .empty-filter { padding: 1.5rem; text-align: center; background: var(--warning-soft); border-radius: 12px; }
 .result-table { width: 100%; font-size: 0.94rem; }
-.result-table th, .result-table td { padding: 0.85rem 0.7rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
-.result-table th { background: #f4eee8; white-space: nowrap; }
+.result-table th, .result-table td { padding: 0.9rem 0.8rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; }
+.result-table th { background: #f4eee8; white-space: nowrap; }  
+.result-table thead th {color: var(--muted); font-size: 0.85rem; font-weight: 800;}
 .result-table tbody tr:hover { background: #fffaf1; }
 .is-active-result { outline: 3px solid var(--primary); outline-offset: -3px; background: #fff5dd !important; }
 /* [UX 5단계] 마우스를 사용할 수 있는 환경에서만
@@ -467,6 +491,15 @@ fieldset legend { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
   border-top:
     1px solid var(--border);
 }
+/* [UX 7단계] 브라우저 호환성을 우선할 경우
+   기존 디자인 색상만 사용해 핵심 결과 카드를 강조합니다. */
+.primary-result-card {
+  border-color:
+    var(--primary);
+  box-shadow:
+    var(--shadow-raised);
+}
+
 
 /* [UX 5단계] '음력', '만 나이' 같은 정보 이름은
    실제 값보다 낮은 시각적 중요도로 표시합니다. */
@@ -585,6 +618,7 @@ fieldset legend { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
 .result-calendar-cell {
   white-space: nowrap;
 }
+
 
 /* 달력은 보조 도구로 기본 접힘 */
 .calendar-disclosure-body { padding-top: 1rem; }
@@ -1085,6 +1119,7 @@ fieldset legend { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
 
   color: #c33f4a;
 }
+
 
 /* [EASTER EGG] 모바일에서도 닫기 버튼을
    쉽게 누를 수 있도록 충분한 너비와 터치 영역을 제공합니다. */
