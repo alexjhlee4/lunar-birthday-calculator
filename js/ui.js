@@ -238,6 +238,47 @@
     }).join('');
   }
 
+  /* [UX 5단계] 데스크톱 표와 모바일 카드가
+   동일한 날짜·음력·만 나이 정보를 사용하도록
+   결과 한 행의 표시용 데이터를 한 곳에서 정리합니다.
+   계산 결과 자체는 변경하지 않습니다. */
+  function buildResultDisplayData(row) {
+    const lunarLabel =
+    `음력 ${row.appliedLunarDate.month}월 `
+    + `${row.appliedLunarDate.day}일 · `
+    + `${row.appliedLunarDate.isLeapMonth
+      ? '윤달'
+      : '평달'}`;
+    /* [UX 5단계] 결과 목록에서는 연도가 이미 별도로 보이므로
+     양력 날짜의 핵심인 월·일을 크게 보여주기 위한 문자열입니다. */
+    const solarMonthDay =
+      `${row.solarDate.month}월 `
+      + `${row.solarDate.day}일`;
+
+    return {
+    yearLabel:
+      `${row.targetSolarYear}년`,
+
+    solarMonthDay,
+
+    solarFullDate:
+      DateUtils.formatKoreanDate(
+        row.solarDate,
+        false
+      ),
+
+    weekday:
+      row.weekday,
+
+    lunarLabel,
+
+    ageLabel:
+      AgeService.formatAge(
+        row.age
+      )
+  };
+}
+
   function renderResults(resultMeta, filteredRows, activeDateKey) {
     const r = getRefs();
     r.resultSummary.textContent = `${resultMeta.baseYear}년부터 ${resultMeta.endYear}년까지, 총 ${resultMeta.rows.length}개의 생일 날짜를 계산했습니다.`;
@@ -252,7 +293,9 @@
     r.mobileCards.replaceChildren();
 
     filteredRows.forEach((row) => {
-      const lunarLabel = `음력 ${row.appliedLunarDate.month}월 ${row.appliedLunarDate.day}일 · ${row.appliedLunarDate.isLeapMonth ? '윤달' : '평달'}`;
+    /* [UX 5단계] Desktop Table과 Mobile Card에서
+     같은 정보 구조를 사용하기 위한 표시용 데이터입니다. */
+      const display = buildResultDisplayData(row);
       const badgeHtml = getStatusBadgeHtml(row);
       const messageHtml = row.messages.length
         ? `<ul class="adjustment-messages">${row.messages.map((m) => `<li>${escapeHtml(m)}</li>`).join('')}</ul>`
@@ -262,29 +305,162 @@
       const tr = document.createElement('tr');
       tr.id = `result-row-${row.dateKey}`;
       tr.className = activeClass.trim();
-      tr.innerHTML = `
-        <td>${row.targetSolarYear}년</td>
-        <td><strong>${escapeHtml(DateUtils.formatKoreanDate(row.solarDate, false))}</strong></td>
-        <td>${escapeHtml(row.weekday)}</td>
-        <td>${escapeHtml(lunarLabel)}</td>
-        <td>${escapeHtml(AgeService.formatAge(row.age))}</td>
-        <td>${badgeHtml ? `<div class="badge-list">${badgeHtml}</div>${messageHtml}` : '<span class="status-none">—</span>'}</td>
-        <td><button type="button" class="button button-small" data-result-key="${row.dateKey}">달력에서 보기</button></td>
-      `;
+/* [UX 5단계] 연도·월일·요일을 하나의 셀에 계층적으로 배치해
+   데스크톱에서도 사용자가 실제 생일 날짜를 가장 먼저 읽게 합니다. */
+tr.innerHTML = `
+
+  <td class="result-date-cell">
+
+    <span class="result-table-year">
+      ${escapeHtml(display.yearLabel)}
+    </span>
+
+    <strong class="result-table-date">
+      ${escapeHtml(display.solarMonthDay)}
+    </strong>
+
+    <span class="result-table-weekday">
+      ${escapeHtml(display.weekday)}
+    </span>
+
+  </td>
+
+
+  <td class="result-lunar-cell">
+    ${escapeHtml(display.lunarLabel)}
+  </td>
+
+
+  <!-- [UX 5단계] 만 나이는 날짜 다음으로 빠르게 찾을 수 있도록
+       독립적인 강조 텍스트로 표시합니다. -->
+  <td class="result-age-cell">
+    <strong>
+      ${escapeHtml(display.ageLabel)}
+    </strong>
+  </td>
+
+
+  <!-- [UX 5단계] 정상 결과에는 불필요한 상태 문구를 추가하지 않고,
+       윤달 대체·29일 조정 같은 예외가 있을 때만 강조합니다. -->
+  <td class="result-status-cell">
+
+    ${
+      badgeHtml
+        ? `
+          <div class="badge-list">
+            ${badgeHtml}
+          </div>
+
+          ${messageHtml}
+        `
+        : `
+          <span
+            class="status-none"
+            aria-label="특이사항 없음"
+          >
+            —
+          </span>
+        `
+    }
+
+  </td>
+
+
+  <td class="result-calendar-cell">
+
+    <button
+      type="button"
+      class="button button-small"
+      data-result-key="${row.dateKey}"
+    >
+      달력 보기
+    </button>
+
+  </td>
+`;
       r.tableBody.appendChild(tr);
 
       const card = document.createElement('article');
       card.id = `result-card-${row.dateKey}`;
       card.className = `result-card${activeClass}`;
-      card.innerHTML = `
-        <p class="result-year">${row.targetSolarYear}년</p>
-        <h3>${escapeHtml(DateUtils.formatKoreanDate(row.solarDate, true))}</h3>
-        <p>${escapeHtml(lunarLabel)}</p>
-        <p><strong>${escapeHtml(AgeService.formatAge(row.age))}</strong></p>
-        ${badgeHtml ? `<div class="badge-list">${badgeHtml}</div>` : ''}
-        ${messageHtml}
-        <button type="button" class="button button-secondary" data-result-key="${row.dateKey}">달력에서 보기</button>
-      `;
+/* [UX 5단계] 모바일에서도 데스크톱과 동일하게
+   '연도 → 양력 날짜 → 요일 → 음력 → 만 나이 → 예외' 순서로
+   정보 우선순위를 통일합니다. */
+card.innerHTML = `
+
+  <div class="result-card-header">
+
+    <p class="result-year">
+      ${escapeHtml(display.yearLabel)}
+    </p>
+
+
+    <p class="result-card-date">
+
+      <strong>
+        ${escapeHtml(display.solarMonthDay)}
+      </strong>
+
+      <span>
+        ${escapeHtml(display.weekday)}
+      </span>
+
+    </p>
+
+  </div>
+
+
+  <dl class="result-card-info">
+
+    <div>
+      <dt>음력</dt>
+
+      <dd>
+        ${escapeHtml(display.lunarLabel)}
+      </dd>
+    </div>
+
+
+    <div>
+      <dt>만 나이</dt>
+
+      <dd class="result-card-age">
+        <strong>
+          ${escapeHtml(display.ageLabel)}
+        </strong>
+      </dd>
+    </div>
+
+  </dl>
+
+
+  ${
+    badgeHtml
+      ? `
+        <!-- [UX 5단계] 예외가 발생한 결과에만
+             조정 상태와 상세 설명을 표시합니다. -->
+        <div class="result-card-exception">
+
+          <div class="badge-list">
+            ${badgeHtml}
+          </div>
+
+          ${messageHtml}
+
+        </div>
+      `
+      : ''
+  }
+
+
+  <button
+    type="button"
+    class="button button-secondary result-calendar-button"
+    data-result-key="${row.dateKey}"
+  >
+    달력에서 보기
+  </button>
+`;
       r.mobileCards.appendChild(card);
     });
   }

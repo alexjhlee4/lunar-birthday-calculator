@@ -359,6 +359,10 @@ fieldset legend { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
 .result-table th { background: #f4eee8; white-space: nowrap; }
 .result-table tbody tr:hover { background: #fffaf1; }
 .is-active-result { outline: 3px solid var(--primary); outline-offset: -3px; background: #fff5dd !important; }
+/* [UX 5단계] 마우스를 사용할 수 있는 환경에서만
+   결과 행에 가벼운 hover 효과를 제공해 현재 보고 있는 행을 쉽게 구분합니다. */
+@media (hover: hover) {
+  .result-table tbody tr:hover {background: var(--surface-soft);}}
 .badge-list { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .status-badge { display: inline-flex; align-items: center; min-height: 28px; padding: 0.2rem 0.55rem; border-radius: 999px; font-size: 0.79rem; font-weight: 850; border: 1px solid currentColor; }
 .status-leap_original { color: #5c3c8e; background: #eee7fb; }
@@ -369,12 +373,218 @@ fieldset legend { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
 /* [UX 2단계] 모바일 결과 카드를 기본값으로 사용하고 충분히 넓은 데스크톱에서만 표로 변경합니다. */
 .desktop-results {display: none;}
 .mobile-results {display: block;}
-.result-card { border: 1px solid var(--border); border-radius: 14px; padding: 1rem; background: #fff; }
-.result-card + .result-card { margin-top: 0.8rem; }
-.result-card h3 { font-size: 1.2rem; margin: 0.15rem 0 0.35rem; }
-/* [UX 2단계] 모바일에서 '달력에서 보기' 버튼을 충분히 넓게 만들어 터치하기 쉽게 합니다. */
-.result-card .badge-list, .result-card button { margin-top: 0.7rem; }
-.result-year { color: var(--primary); font-weight: 850; }
+/* [UX 5단계] 기존 카드의 테두리·배경·간격은 유지합니다.
+   결과 정보 구조만 새 레이아웃에 맞게 정리합니다. */
+.result-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem;
+  background: #fff;
+}
+
+/* [UX 5단계] 여러 연도 결과 카드 사이의 간격은 기존 값을 유지합니다. */
+.result-card + .result-card {
+  margin-top: 0.8rem;
+}
+
+/* [UX 5단계] 모바일 결과 카드 내부의
+   연도와 실제 날짜를 하나의 Header 그룹으로 묶습니다. */
+.result-card-header {
+  display: grid;
+  gap: 0.25rem;
+}
+
+/* [UX 5단계] 연도는 실제 생일 날짜보다 한 단계 낮은
+   보조 정보로 표시합니다. */
+.result-year {
+  margin: 0;
+
+  color: var(--primary);
+
+  font-size: 0.85rem;
+  font-weight: 850;
+}
+
+/* [UX 5단계] 실제 양력 월·일과 요일을
+   모바일 결과 카드의 핵심 정보로 표시합니다. */
+.result-card-date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+
+  gap: 0.45rem;
+
+  margin: 0;
+}
+
+/* [UX 5단계] 사용자가 가장 먼저 찾는 월·일을 크게 강조합니다. */
+.result-card-date strong {
+  font-size: clamp(
+    1.35rem,
+    6vw,
+    1.65rem
+  );
+
+  line-height: 1.25;
+}
+
+/* [UX 5단계] 요일은 날짜보다 한 단계 낮은 보조 정보로 표시합니다. */
+.result-card-date span {
+  color: var(--muted);
+
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+/* [UX 5단계] 음력 날짜와 만 나이를
+   label/value 구조로 보여주기 위한 정보 영역입니다. */
+.result-card-info {
+  display: grid;
+
+  gap: 0;
+
+  margin:
+    0.9rem
+    0
+    0;
+}
+
+/* [UX 5단계] 각 정보 항목 사이를 가벼운 구분선으로 나눠
+   음력과 만 나이를 빠르게 구별할 수 있게 합니다. */
+.result-card-info > div {
+  display: grid;
+
+  grid-template-columns:
+    64px
+    minmax(0, 1fr);
+
+  gap: 0.75rem;
+
+  padding:
+    0.65rem
+    0;
+
+  border-top:
+    1px solid var(--border);
+}
+
+/* [UX 5단계] '음력', '만 나이' 같은 정보 이름은
+   실제 값보다 낮은 시각적 중요도로 표시합니다. */
+.result-card-info dt {
+  color: var(--muted);
+
+  font-size: 0.88rem;
+  font-weight: 750;
+}
+
+/* [UX 5단계] 실제 음력 날짜와 만 나이 값이
+   좁은 화면에서도 정상적으로 줄바꿈되도록 합니다. */
+.result-card-info dd {
+  min-width: 0;
+
+  margin: 0;
+}
+
+/* [UX 5단계] 만 나이는 사용자가 자주 확인하는 정보이므로
+   다른 보조정보보다 조금 더 강조합니다. */
+.result-card-age {
+  color: var(--primary-dark);
+}
+
+/* [UX 5단계] 윤달 대체·29일 조정처럼
+   사용자가 반드시 알아야 하는 예외가 있을 때만
+   별도의 영역으로 강조합니다. */
+.result-card-exception {
+  margin-top: 0.8rem;
+
+  padding: 0.8rem;
+
+  border-radius: 10px;
+
+  background: var(--surface-soft);
+}
+
+/* [UX 5단계] 예외 배지와 상세 설명 사이에
+   읽기 편한 간격을 제공합니다. */
+.result-card-exception .adjustment-messages {
+  margin-top: 0.6rem;
+}
+
+/* [UX 5단계] 결과 카드의 최종 행동인
+   '달력에서 보기' 버튼을 모바일에서 충분히 크게 유지합니다. */
+.result-calendar-button {
+  width: 100%;
+  margin-top: 0.9rem;
+}
+/* =========================================================
+   [UX 5단계] 데스크톱 결과표 정보 계층
+   연도·월일·요일을 하나의 셀로 통합해
+   실제 생일 날짜를 가장 먼저 읽게 합니다.
+   ========================================================= */
+
+
+/* [UX 5단계] 첫 번째 양력 생일 셀에
+   연도·월일·요일이 안정적으로 들어갈 공간을 확보합니다. */
+.result-date-cell {
+  min-width: 145px;
+}
+
+/* [UX 5단계] 연도는 실제 날짜보다 작은 보조정보로 표시합니다. */
+.result-table-year {
+  display: block;
+
+  margin-bottom: 0.15rem;
+
+  color: var(--muted);
+
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+/* [UX 5단계] 월·일은 결과표에서 가장 중요한 정보로 강조합니다. */
+.result-table-date {
+  display: block;
+
+  color: var(--text);
+
+  font-size: 1.05rem;
+}
+
+/* [UX 5단계] 요일은 양력 날짜를 보조하는 정보로 표시합니다. */
+.result-table-weekday {
+  display: block;
+
+  margin-top: 0.15rem;
+
+  color: var(--muted);
+
+  font-size: 0.85rem;
+}
+
+/* [UX 5단계] 음력 날짜가 지나치게 좁게 압축되지 않도록
+   충분한 최소 너비를 제공합니다. */
+.result-lunar-cell {
+  min-width: 170px;
+}
+
+/* [UX 5단계] 만 나이는 행끼리 비교하기 쉽도록
+   줄바꿈하지 않고 표시합니다. */
+.result-age-cell {
+  white-space: nowrap;
+
+  color: var(--primary-dark);
+}
+
+/* [UX 5단계] 윤달·29일 조정 설명이 들어갈 수 있도록
+   특이사항 열에 충분한 공간을 확보합니다. */
+.result-status-cell {
+  min-width: 170px;
+}
+
+/* [UX 5단계] 달력 보기 버튼이 두 줄로 나뉘지 않도록 합니다. */
+.result-calendar-cell {
+  white-space: nowrap;
+}
 
 /* 달력은 보조 도구로 기본 접힘 */
 .calendar-disclosure-body { padding-top: 1rem; }
