@@ -1073,6 +1073,24 @@ fieldset legend { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
 
   gap: 1rem;
 }
+/* [UX 5단계] 701~900px 태블릿에서는
+   음력과 만 나이를 좌우 두 영역으로 배치해
+   카드의 세로 길이를 줄입니다. */
+.result-card-info {
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 1rem;
+}
+
+
+/* [UX 5단계] 태블릿의 각 정보 영역 내부에서는
+   label과 value를 위아래로 배치합니다. */
+.result-card-info > div {
+  grid-template-columns: 1fr;
+
+  gap: 0.2rem;
+}
 }
 
 
