@@ -484,31 +484,183 @@
       <summary>달력으로 보기</summary>
       <div class="disclosure-body calendar-disclosure-body">
         <section id="calendar-section" class="calendar-card" aria-labelledby="calendar-section-heading">
-          <div class="section-heading">
-            <div>
-              <h2 id="calendar-section-heading">월간 생일 달력</h2>
-              <p class="section-description">결과 날짜의 위치를 달력에서 확인할 수 있어요.</p>
-            </div>
-            <button id="calendar-apply-result-year" type="button" class="button button-secondary">이 연도부터 결과 보기</button>
-          </div>
+<!-- [UX 3단계] 달력의 역할을 '결과를 확인하는 보조 도구'로 명확히 하기 위해
+     제목 영역에서는 달력 설명만 보여주고 이동 기능은 아래 Navigation으로 모읍니다. -->
+<div class="section-heading">
+  <div>
+    <h2 id="calendar-section-heading">
+      월간 생일 달력
+    </h2>
 
-          <div class="calendar-navigation" aria-label="달력 이동">
-            <div class="calendar-nav-row">
-              <button id="calendar-prev-year" type="button" class="button button-compact" aria-label="이전 연도">≪ 이전 연도</button>
-              <button id="calendar-prev-month" type="button" class="button button-compact" aria-label="이전 달">‹ 이전 달</button>
-              <h3 id="calendar-heading" tabindex="-1" aria-live="polite"></h3>
-              <button id="calendar-next-month" type="button" class="button button-compact" aria-label="다음 달">다음 달 ›</button>
-              <button id="calendar-next-year" type="button" class="button button-compact" aria-label="다음 연도">다음 연도 ≫</button>
-            </div>
-            <div class="calendar-jump-row">
-              <button id="calendar-today" type="button" class="button button-secondary">오늘로 이동</button>
-              <label for="calendar-jump-year">연도</label>
-              <select id="calendar-jump-year"></select>
-              <label for="calendar-jump-month">월</label>
-              <select id="calendar-jump-month"></select>
-              <button id="calendar-jump-button" type="button" class="button button-secondary">이동</button>
-            </div>
-          </div>
+    <p class="section-description">
+      계산된 생일 날짜의 위치를 달력에서 확인할 수 있어요.
+    </p>
+  </div>
+</div>
+
+
+<!-- [UX 3단계] 가장 자주 사용하는 이전 달/다음 달 이동만
+     기본 화면에 노출하고 나머지 이동 기능은 접어서 제공합니다. -->
+<div
+  class="calendar-navigation"
+  aria-label="달력 이동"
+>
+
+  <!-- [UX 3단계] 기본 달력 탐색은
+       '이전 달 → 현재 연·월 → 다음 달'의 세 요소로 단순화합니다. -->
+  <div class="calendar-primary-nav">
+
+    <button
+      id="calendar-prev-month"
+      type="button"
+      class="button calendar-month-button"
+      aria-label="이전 달"
+      title="이전 달"
+    >
+      <span aria-hidden="true">‹</span>
+    </button>
+
+
+    <h3
+      id="calendar-heading"
+      tabindex="-1"
+      aria-live="polite"
+    ></h3>
+
+
+    <button
+      id="calendar-next-month"
+      type="button"
+      class="button calendar-month-button"
+      aria-label="다음 달"
+      title="다음 달"
+    >
+      <span aria-hidden="true">›</span>
+    </button>
+
+  </div>
+
+
+  <!-- [UX 3단계] 오늘로 이동은 자주 사용할 가능성이 있어
+       고급 설정 안으로 숨기지 않고 기본 화면에 유지합니다. -->
+  <div class="calendar-quick-actions">
+
+    <button
+      id="calendar-today"
+      type="button"
+      class="button button-secondary"
+    >
+      오늘로 이동
+    </button>
+
+  </div>
+
+
+  <!-- [UX 3단계] 연도 이동·특정 연월 이동·결과 시작 연도 변경처럼
+       빈도가 낮은 기능은 필요할 때만 펼쳐볼 수 있도록 details에 묶습니다. -->
+  <details class="calendar-move-details">
+
+    <summary class="calendar-move-summary">
+      <span>
+        다른 연도·월로 이동
+      </span>
+
+      <!-- [UX 3단계] 열림/닫힘 상태를 시각적으로 전달하는 장식 아이콘입니다. -->
+      <span
+        class="calendar-move-chevron"
+        aria-hidden="true"
+      >
+        ▾
+      </span>
+    </summary>
+
+
+    <!-- [UX 3단계] 기존 달력 이동 기능은 삭제하지 않고
+         모두 이 패널 안에서 그대로 사용할 수 있게 유지합니다. -->
+    <div class="calendar-move-panel">
+
+      <!-- [UX 3단계] 기존 '이전 연도 / 다음 연도' 기능을
+           보다 짧은 문구로 유지합니다. id는 변경하지 않아 기존 JS가 그대로 작동합니다. -->
+      <div class="calendar-year-stepper">
+
+        <button
+          id="calendar-prev-year"
+          type="button"
+          class="button button-secondary"
+          aria-label="1년 전으로 이동"
+        >
+          ← 1년 전
+        </button>
+
+        <button
+          id="calendar-next-year"
+          type="button"
+          class="button button-secondary"
+          aria-label="1년 후로 이동"
+        >
+          1년 후 →
+        </button>
+
+      </div>
+
+
+      <!-- [UX 3단계] 직접 연도와 월을 선택하는 기능을
+           각 입력 필드로 나누어 모바일에서도 명확하게 읽을 수 있게 합니다. -->
+      <div class="calendar-jump-fields">
+
+        <div class="field-group">
+          <label for="calendar-jump-year">
+            연도
+          </label>
+
+          <select id="calendar-jump-year"></select>
+        </div>
+
+
+        <div class="field-group">
+          <label for="calendar-jump-month">
+            월
+          </label>
+
+          <select id="calendar-jump-month"></select>
+        </div>
+
+      </div>
+
+
+      <!-- [UX 3단계] 선택한 연도와 월로 실제 이동하는 기존 버튼입니다. -->
+      <button
+        id="calendar-jump-button"
+        type="button"
+        class="button button-secondary calendar-jump-button"
+      >
+        선택한 연도·월로 이동
+      </button>
+
+
+      <!-- [UX 3단계] 달력 탐색 연도와 결과 조회 시작 연도는 서로 다른 상태이므로,
+           기존 기능은 유지하되 고급 이동 패널 안에서만 제공합니다. -->
+      <div class="calendar-result-year-action">
+
+        <button
+          id="calendar-apply-result-year"
+          type="button"
+          class="button button-secondary"
+        >
+          이 연도부터 결과 보기
+        </button>
+
+        <p class="helper-text">
+          현재 달력의 연도를 연도별 생일 결과의 시작 연도로 적용합니다.
+        </p>
+
+      </div>
+
+    </div>
+
+  </details>
+
+</div>
 
           <div id="calendar-grid" class="calendar-grid" role="grid" aria-labelledby="calendar-heading"></div>
 

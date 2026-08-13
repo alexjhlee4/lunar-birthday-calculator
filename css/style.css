@@ -378,13 +378,223 @@ fieldset legend { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
 
 /* 달력은 보조 도구로 기본 접힘 */
 .calendar-disclosure-body { padding-top: 1rem; }
-.calendar-navigation { display: grid; gap: 0.75rem; margin-bottom: 1rem; }
-/* [UX 2단계] 현재 달력 기능은 모두 유지하되 모바일에서는 버튼이 두 칸씩 안전하게 줄바꿈됩니다. */
-.calendar-nav-row {display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 0.5rem;}
-.calendar-nav-row h3 {grid-column: 1 / -1; grid-row: 1; margin-bottom: 0.2rem; text-align: center; font-size: 1.35rem;}
+/* =========================================================
+   [UX 3단계] 달력 Navigation 단순화
+   기본 화면에는 월 이동만 보여주고,
+   연도·직접 이동은 Progressive Disclosure로 제공합니다.
+   ========================================================= */
+
+/* [UX 3단계] 달력 이동 UI의 각 기능 그룹 사이에
+   충분한 간격을 주어 한 덩어리처럼 보이지 않도록 합니다. */
+.calendar-navigation {
+  display: grid;
+  gap: 0.85rem;
+
+  margin-bottom: 1rem;
+}
+
+/* [UX 3단계] 가장 중요한 이전 달/다음 달 이동을
+   '버튼 - 현재 연월 - 버튼'의 단순한 3열 구조로 만듭니다. */
+.calendar-primary-nav {
+  width: min(100%, 520px);
+
+  display: grid;
+
+  grid-template-columns:
+    44px
+    minmax(0, 1fr)
+    44px;
+
+  align-items: center;
+
+  gap: 0.5rem;
+
+  margin-inline: auto;
+}
+
+/* [UX 3단계] 현재 보고 있는 연·월을
+   달력 Navigation에서 가장 강하게 인식할 수 있도록 중앙 정렬합니다. */
+.calendar-primary-nav h3 {
+  margin: 0;
+
+  text-align: center;
+
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+
+/* [UX 3단계] 월 이동 버튼은 아이콘 중심의 작은 UI이지만
+   부모님 세대도 누르기 쉽도록 최소 44px 터치 영역을 유지합니다. */
+.calendar-month-button {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+
+  padding: 0;
+
+  display: inline-grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+/* [UX 3단계] 오늘로 이동은 월 Navigation보다 낮은 우선순위이므로
+   중앙에 작은 보조 버튼으로 배치합니다. */
+.calendar-quick-actions {
+  display: flex;
+  justify-content: center;
+}
+
+/* [UX 3단계] 모바일에서는 '오늘로 이동' 버튼이
+   너무 작거나 길게 찌그러지지 않도록 충분한 너비를 제공합니다. */
+.calendar-quick-actions .button {
+  width: min(100%, 220px);
+}
+/* [UX 3단계] 고급 달력 이동 기능을 담는 details는
+   기본 달력 Navigation과 시각적으로 분리합니다. */
+.calendar-move-details {
+  width: min(100%, 620px);
+
+  margin-inline: auto;
+}
+
+/* [UX 3단계] 다른 연도·월 이동은 보조 기능이므로
+   강한 버튼 대신 가벼운 summary 형태로 제공합니다. */
+.calendar-move-summary {
+  width: 100%;
+
+  min-height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 0.45rem;
+
+  padding: 0.55rem 0.75rem;
+
+  color: var(--primary-dark);
+
+  font-weight: 750;
+
+  cursor: pointer;
+
+  list-style: none;
+}
+
+/* [UX 3단계] 브라우저 기본 details marker를 제거하고
+   직접 만든 화살표 아이콘을 사용합니다. */
+.calendar-move-summary::-webkit-details-marker {
+  display: none;
+}
+
+.calendar-move-summary::marker {
+  content: "";
+}
+
+/* [UX 3단계] 키보드 탐색 시 현재 위치를
+   명확하게 확인할 수 있는 focus 스타일입니다. */
+.calendar-move-summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+
+  border-radius: 8px;
+}
+
+/* [UX 3단계] 접힘 상태를 보여주는 아이콘에
+   부드러운 회전 효과를 적용합니다. */
+.calendar-move-chevron {
+  display: inline-block;
+
+  transition: transform 160ms ease;
+}
+
+/* [UX 3단계] 이동 설정이 펼쳐졌을 때
+   화살표가 위를 향하도록 회전합니다. */
+.calendar-move-details[open]
+.calendar-move-chevron {
+  transform: rotate(180deg);
+}
+/* [UX 3단계] 고급 이동 설정은 별도 카드처럼 과도하게 강조하지 않고
+   가벼운 보조 패널 형태로 표시합니다. */
+.calendar-move-panel {
+  display: grid;
+  gap: 1rem;
+
+  margin-top: 0.35rem;
+
+  padding: 1rem;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: var(--surface-soft);
+}
+
+
+/* [UX 3단계] 이전/다음 연도 기능은 그대로 유지하되
+   모바일에서도 균등한 두 버튼으로 표시합니다. */
+.calendar-year-stepper {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 0.6rem;
+}
+
+
+/* [UX 3단계] 직접 이동할 연도와 월은
+   모바일에서도 명확하게 구분되는 두 입력 필드로 표시합니다. */
+.calendar-jump-fields {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+
+  gap: 0.75rem;
+}
+
+
+/* [UX 3단계] select가 Grid 영역을 밀어내
+   모바일 가로 스크롤을 만드는 것을 방지합니다. */
+.calendar-jump-fields select {
+  width: 100%;
+  min-width: 0;
+}
+
+
+/* [UX 3단계] 선택한 연·월로 이동하는 주요 행동은
+   고급 설정 영역 내부에서 충분히 큰 버튼으로 제공합니다. */
+.calendar-jump-button {
+  width: 100%;
+}
+
+
+/* [UX 3단계] 결과 시작 연도 변경은 달력 자체 이동과 다른 기능이므로
+   구분선을 사용해 별도의 행동임을 명확하게 표시합니다. */
+.calendar-result-year-action {
+  display: grid;
+  gap: 0.45rem;
+
+  padding-top: 1rem;
+
+  border-top: 1px solid var(--border);
+}
+
+
+/* [UX 3단계] 모바일에서 결과 연도 적용 버튼을
+   누르기 쉽도록 전체 너비를 사용합니다. */
+.calendar-result-year-action .button {
+  width: 100%;
+}
+
 /* [UX 2단계] 직접 이동 컨트롤이 모바일에서 자연스럽게 줄바꿈되도록 왼쪽 정렬합니다. */
-.calendar-jump-row {display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; justify-content: flex-start;}
-.calendar-jump-row select {width: auto; min-width: 82px;}
 .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
 .calendar-weekday { min-height: 44px; display: grid; place-items: center; font-weight: 800; background: #f4eee8; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 /* [UX 2단계] 모바일에서는 셀 높이를 줄여 7열 달력이 화면 밖으로 밀리지 않게 합니다. */
@@ -475,9 +685,18 @@ fieldset legend { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
   .calendar-lunar {display: block; font-size: 0.72rem;}
   .calendar-birthday {font-size: 0.72rem;}
   .calendar-birthday span {font-size: inherit;}
-  .calendar-jump-row {justify-content: center;}
-  .calendar-jump-row select {min-width: 105px;}
   .modal-panel {max-height: min(88vh, 850px); border-radius: 18px;}
+  /* [UX 3단계] 태블릿 이상에서는 현재 연·월을
+   조금 더 크게 표시해 달력의 현재 위치를 강조합니다. */
+.calendar-primary-nav h3 {font-size: 1.4rem;}
+
+/* [UX 3단계] 태블릿 이상에서는 오늘로 이동 버튼이
+   내용 너비만큼만 사용하도록 합니다. */
+.calendar-quick-actions .button {width: auto; min-width: 150px;}
+
+/* [UX 3단계] 넓은 화면에서도 고급 이동 패널이
+   지나치게 길어지지 않도록 중앙의 제한된 너비를 유지합니다. */
+.calendar-move-panel {padding: 1.2rem;}
 }
 
 
@@ -489,9 +708,6 @@ fieldset legend { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
   /* [UX 2단계] 7개 열의 결과표는 충분한 가로 공간이 있을 때만 표시합니다. */
   .desktop-results {display: block;}
   .mobile-results {display: none;}
-  /* [UX 2단계] 데스크톱에서는 기존 달력 이동 버튼을 한 줄에 유지합니다. */
-  .calendar-nav-row {grid-template-columns:auto auto 1fr auto auto;}
-  .calendar-nav-row h3 {grid-column: auto; grid-row: auto; margin-bottom: 0; font-size: 1.45rem;}
   .calendar-day {min-height: 112px; padding: 0.55rem;}
   .calendar-lunar {font-size: 0.78rem;}
   .calendar-birthday {font-size: 0.78rem;}
@@ -514,4 +730,7 @@ fieldset legend { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+  /* [UX 3단계] 모션 감소를 선호하는 사용자는
+   도움말 화살표 회전 애니메이션도 즉시 변경되도록 합니다. */
+  .calendar-move-chevron {transition: none;}
 }
