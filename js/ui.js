@@ -310,25 +310,153 @@
     });
   }
 
+/* [UX 4단계] 달력에서 선택한 날짜 정보를
+   일반 문장 나열이 아니라 날짜 → 음력 → 만 나이 → 조정 상태의
+   명확한 정보 계층으로 보여줍니다. */
   function renderDateDetail(cell) {
     const r = getRefs();
-    const weekday = DateUtils.getWeekdayName(cell.date);
+
+    const weekday =
+    DateUtils.getWeekdayName(cell.date);
+
+
+  /* [UX 4단계] 음력 정보가 존재하면
+     날짜와 평달/윤달 여부를 하나의 읽기 쉬운 문장으로 만듭니다. */
     const lunarText = cell.lunar
-      ? `음력 ${cell.lunar.year}년 ${cell.lunar.month}월 ${cell.lunar.day}일 · ${cell.lunar.isLeapMonth ? '윤달' : '평달'}`
-      : '음력 정보를 확인할 수 없습니다.';
+    ? (
+      `음력 ${cell.lunar.year}년 `
+      + `${cell.lunar.month}월 `
+      + `${cell.lunar.day}일 · `
+      + `${cell.lunar.isLeapMonth ? '윤달' : '평달'}`
+    )
+    : '음력 정보를 확인할 수 없습니다.';
+
+
     const result = cell.result;
-    r.dateDetail.innerHTML = `
-      <h3>${escapeHtml(DateUtils.formatKoreanDate(cell.date, false))} ${escapeHtml(weekday)}</h3>
-      <p>${escapeHtml(lunarText)}</p>
-      ${result ? `
-        <p><strong><span aria-hidden="true">🎂</span> 계산된 음력 생일입니다.</strong></p>
-        <p>${escapeHtml(AgeService.formatAge(result.age))}</p>
-        ${getStatusBadgeHtml(result) ? `<div class="badge-list">${getStatusBadgeHtml(result)}</div>` : ''}
-        ${result.messages.length ? `<ul class="adjustment-messages">${result.messages.map((m) => `<li>${escapeHtml(m)}</li>`).join('')}</ul>` : ''}
-        <button type="button" class="button button-secondary" data-scroll-result="${result.dateKey}">결과에서 보기</button>
-      ` : '<p>현재 계산 결과에 포함된 생일 날짜가 아닙니다.</p>'}
+
+
+  /* [UX 4단계] 계산된 생일 날짜에만
+     만 나이와 결과 상태를 추가로 보여줍니다. */
+    const birthdayDetailHtml = result
+    ? `
+      <div class="date-detail-birthday">
+
+        <p class="date-detail-birthday-label">
+          <span aria-hidden="true">🎂</span>
+          <strong>계산된 음력 생일입니다.</strong>
+        </p>
+
+
+        <dl class="date-detail-info">
+
+          <div class="date-detail-info-row">
+            <dt>음력 날짜</dt>
+
+            <dd>
+              ${escapeHtml(lunarText)}
+            </dd>
+          </div>
+
+
+          <div class="date-detail-info-row">
+            <dt>만 나이</dt>
+
+            <dd>
+              <strong>
+                ${escapeHtml(
+                  AgeService.formatAge(result.age)
+                )}
+              </strong>
+            </dd>
+          </div>
+
+        </dl>
+
+
+        ${
+          getStatusBadgeHtml(result)
+            ? `
+              <div class="badge-list">
+                ${getStatusBadgeHtml(result)}
+              </div>
+            `
+            : ''
+        }
+
+
+        ${
+          result.messages.length
+            ? `
+              <ul class="adjustment-messages">
+                ${result.messages
+                  .map(
+                    (message) =>
+                      `<li>${escapeHtml(message)}</li>`
+                  )
+                  .join('')}
+              </ul>
+            `
+            : ''
+        }
+
+
+        <button
+          type="button"
+          class="button button-secondary"
+          data-scroll-result="${result.dateKey}"
+        >
+          연도별 결과에서 보기
+        </button>
+
+      </div>
+    `
+    : `
+      <dl class="date-detail-info">
+
+        <div class="date-detail-info-row">
+          <dt>음력 날짜</dt>
+
+          <dd>
+            ${escapeHtml(lunarText)}
+          </dd>
+        </div>
+
+      </dl>
+
+
+      <p class="date-detail-empty">
+        이 날짜는 현재 계산된 음력 생일 날짜가 아닙니다.
+      </p>
     `;
-  }
+
+
+  /* [UX 4단계] 선택 날짜 자체를 가장 먼저 보여주고,
+     그 아래에 생일 여부와 상세정보를 배치합니다. */
+  r.dateDetail.innerHTML = `
+
+    <div class="date-detail-header">
+
+      <p class="date-detail-eyebrow">
+        선택한 날짜
+      </p>
+
+      <h3>
+        ${escapeHtml(
+          DateUtils.formatKoreanDate(
+            cell.date,
+            false
+          )
+        )}
+
+        ${escapeHtml(weekday)}
+      </h3>
+
+    </div>
+
+
+    ${birthdayDetailHtml}
+  `;
+}
 
   function setActiveResult(dateKey) {
     document.querySelectorAll('.is-active-result').forEach((element) => element.classList.remove('is-active-result'));
