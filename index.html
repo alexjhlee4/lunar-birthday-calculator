@@ -459,23 +459,29 @@
       <div id="result-notices"></div>
       <p id="no-filter-results" class="empty-filter" hidden></p>
 
-      <div class="desktop-results">
-        <table class="result-table">
-          <caption class="sr-only">연도별 음력 생일의 양력 날짜, 요일, 음력 기준, 만 나이와 조정 상태</caption>
-          <thead>
-            <tr>
-              <th scope="col">연도</th>
-              <th scope="col">양력 생일</th>
-              <th scope="col">요일</th>
-              <th scope="col">음력 기준</th>
-              <th scope="col">만 나이</th>
-              <th scope="col">특이사항</th>
-              <th scope="col">달력</th>
-            </tr>
-          </thead>
-          <tbody id="result-table-body"></tbody>
-        </table>
-      </div>
+  <!-- [UX 5단계] 연도·날짜·요일을 하나의 '양력 생일' 정보로 묶어
+     데스크톱 결과표의 열을 7개에서 5개로 줄입니다.
+     정보는 삭제하지 않고 시각적 계층만 단순화합니다. -->
+  <div class="desktop-results">
+
+    <table class="result-table">
+
+    <caption class="sr-only">
+      연도별 음력 생일의 양력 날짜와 요일,
+      음력 기준, 실제 만 나이, 조정 상태
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">양력 생일</th>
+        <th scope="col">음력 기준</th>
+        <th scope="col">만 나이</th>
+        <th scope="col">특이사항</th>
+        <th scope="col">달력</th>
+      </tr>
+    </thead>
+    <tbody id="result-table-body"></tbody>
+    </table>
+  </div>
       <div id="result-mobile-cards" class="mobile-results"></div>
     </section>
 
