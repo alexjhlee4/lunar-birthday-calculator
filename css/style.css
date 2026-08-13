@@ -1185,4 +1185,7 @@ fieldset legend { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
   /* [UX 3단계] 모션 감소를 선호하는 사용자는
    도움말 화살표 회전 애니메이션도 즉시 변경되도록 합니다. */
   .calendar-move-chevron {transition: none;}
+  /* [UX 6단계] 움직임 감소 설정을 사용하는 경우
+   Skip Link도 애니메이션 없이 즉시 표시되도록 합니다. */
+  .skip-link {transition: none;}
 }
